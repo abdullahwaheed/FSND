@@ -3,14 +3,17 @@
 #----------------------------------------------------------------------------#
 
 import json
+import logging
 import dateutil.parser
 import babel
+from logging import Formatter, FileHandler
+
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
-import logging
-from logging import Formatter, FileHandler
+from flask_migrate import Migrate
 from flask_wtf import Form
+
 from forms import *
 #----------------------------------------------------------------------------#
 # App Config.
@@ -21,7 +24,7 @@ moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
 
-# TODO: connect to a local postgresql database
+migrate = Migrate(app, db)
 
 #----------------------------------------------------------------------------#
 # Models.
@@ -55,7 +58,11 @@ class Artist(db.Model):
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+Show = db.Table('Show',
+    db.Column('artist_id', db.Integer, db.ForeignKey('Artist.id'), primary_key=True),
+    db.Column('venue_id', db.Integer, db.ForeignKey('Venue.id'), primary_key=True),
+    db.Column('start_time', db.DateTime(), nullable=True)
+)
 
 #----------------------------------------------------------------------------#
 # Filters.
