@@ -29,43 +29,47 @@ migrate = Migrate(app, db)
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
-Show = db.Table('Show',
-    db.Column('artist_id', db.Integer, db.ForeignKey('Artist.id'), primary_key=True),
-    db.Column('venue_id', db.Integer, db.ForeignKey('Venue.id'), primary_key=True),
-    db.Column('start_time', db.DateTime(), nullable=True)
+Show = db.Table('show', db.metadata,
+    db.Column('id', db.Integer, primary_key=True),
+    db.Column('artist_id', db.Integer, db.ForeignKey('artist.id')),
+    db.Column('venue_id', db.Integer, db.ForeignKey('venue.id')),
+    db.Column('start_time', db.DateTime, nullable=True)
 )
 
 
-VenueGenre = db.Table('VenueGenre',
-    db.Column('genre_id', db.Integer, db.ForeignKey('Genre.id'), primary_key=True),
-    db.Column('venue_id', db.Integer, db.ForeignKey('Venue.id'), primary_key=True),
-)
+# VenueGenre = db.Table('venue_genre',
+#     db.Column('genre_id', db.Integer, db.ForeignKey('genre.id'), primary_key=True),
+#     db.Column('venue_id', db.Integer, db.ForeignKey('venue.id'), primary_key=True),
+# )
 
 
 class Venue(db.Model):
-    __tablename__ = 'Venue'
+    __tablename__ = 'venue'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
+    address = db.Column(db.String(120))
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
+    website = db.Column(db.String(120))
     facebook_link = db.Column(db.String(120))
+    seeking_talent = db.Column(db.Boolean, default=False)
+    seeking_description = db.Column(db.String(500), nullable=True)
+    image_link = db.Column(db.String(500))
 
-    genres = db.relationship('Genre', secondary=VenueGenre, backref=db.backref('venues', lazy=True))
-    shows = db.relationship('Show', secondary=VenueGenre, backref=db.backref('venues', lazy=True))
+    # genres = db.relationship('Genre', secondary=VenueGenre, backref=db.backref('venues', lazy=True))
+    # shows = db.relationship('Show', secondary=Show, backref=db.backref('venues', lazy=True))
 
 
-ArtistGenre = db.Table('ArtistGenre',
-    db.Column('genre_id', db.Integer, db.ForeignKey('Genre.id'), primary_key=True),
-    db.Column('artist_id', db.Integer, db.ForeignKey('Artist.id'), primary_key=True),
-)
+# ArtistGenre = db.Table('artist_genre',
+#     db.Column('genre_id', db.Integer, db.ForeignKey('genre.id'), primary_key=True),
+#     db.Column('artist_id', db.Integer, db.ForeignKey('artist.id'), primary_key=True),
+# )
 
 
 class Artist(db.Model):
-    __tablename__ = 'Artist'
+    __tablename__ = 'artist'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
@@ -76,14 +80,15 @@ class Artist(db.Model):
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
 
-    genres = db.relationship('Genre', secondary=ArtistGenre, backref=db.backref('artist', lazy=True))
+    # shows = db.relationship('Show', secondary=Show, backref=db.backref('artists', lazy=True))
+#     genres = db.relationship('Genre', secondary=ArtistGenre, backref=db.backref('artist', lazy=True))
 
 
-class Genre(db.Model):
-    __tablename__ = 'Genre'
+# class Genre(db.Model):
+#     __tablename__ = 'genre'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50))
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(50))
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -92,16 +97,18 @@ class Genre(db.Model):
 def format_datetime(value, format='medium'):
   date = dateutil.parser.parse(value)
   if format == 'full':
-      format="EEEE MMMM, d, y 'at' h:mma"
+      format = "EEEE MMMM, d, y 'at' h:mma"
   elif format == 'medium':
-      format="EE MM, dd, y h:mma"
+      format = "EE MM, dd, y h:mma"
   return babel.dates.format_datetime(date, format, locale='en')
+
 
 app.jinja_env.filters['datetime'] = format_datetime
 
 #----------------------------------------------------------------------------#
 # Controllers.
 #----------------------------------------------------------------------------#
+
 
 @app.route('/')
 def index():
@@ -113,30 +120,46 @@ def index():
 
 @app.route('/venues')
 def venues():
-  # TODO: replace with real venues data.
-  #       num_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
-  return render_template('pages/venues.html', areas=data);
+  # data = [{
+  #   "city": "San Francisco",
+  #   "state": "CA",
+  #   "venues": [{
+  #     "id": 1,
+  #     "name": "The Musical Hop",
+  #     "num_upcoming_shows": 0,
+  #   }, {
+  #     "id": 3,
+  #     "name": "Park Square Live Music & Coffee",
+  #     "num_upcoming_shows": 1,
+  #   }]
+  # }, {
+  #   "city": "New York",
+  #   "state": "NY",
+  #   "venues": [{
+  #     "id": 2,
+  #     "name": "The Dueling Pianos Bar",
+  #     "num_upcoming_shows": 0,
+  #   }]
+  # }]
+  data = {}
+  raw_data = Venue.query.all()
+  for venue in raw_data:
+    venue_data = {
+        'id': venue.id,
+        'name': venue.name,
+        'num_upcoming_shows': 0,
+    }
+    name_key = f'{venue.city}-{venue.state}'
+    if name_key in data:
+        data[name_key]['venues'].append(venue_data)
+    else:
+        data[name_key] = {
+            'city': venue.city,
+            'state': venue.state,
+            'venues': [venue_data]
+        }
+  
+  return render_template('pages/venues.html', areas=data.values());
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
