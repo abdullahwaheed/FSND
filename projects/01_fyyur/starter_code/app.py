@@ -29,6 +29,18 @@ migrate = Migrate(app, db)
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
+Show = db.Table('Show',
+    db.Column('artist_id', db.Integer, db.ForeignKey('Artist.id'), primary_key=True),
+    db.Column('venue_id', db.Integer, db.ForeignKey('Venue.id'), primary_key=True),
+    db.Column('start_time', db.DateTime(), nullable=True)
+)
+
+
+VenueGenre = db.Table('VenueGenre',
+    db.Column('genre_id', db.Integer, db.ForeignKey('Genre.id'), primary_key=True),
+    db.Column('venue_id', db.Integer, db.ForeignKey('Venue.id'), primary_key=True),
+)
+
 
 class Venue(db.Model):
     __tablename__ = 'Venue'
@@ -42,7 +54,15 @@ class Venue(db.Model):
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    genres = db.relationship('Genre', secondary=VenueGenre, backref=db.backref('venues', lazy=True))
+    shows = db.relationship('Show', secondary=VenueGenre, backref=db.backref('venues', lazy=True))
+
+
+ArtistGenre = db.Table('ArtistGenre',
+    db.Column('genre_id', db.Integer, db.ForeignKey('Genre.id'), primary_key=True),
+    db.Column('artist_id', db.Integer, db.ForeignKey('Artist.id'), primary_key=True),
+)
+
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -56,13 +76,14 @@ class Artist(db.Model):
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    genres = db.relationship('Genre', secondary=ArtistGenre, backref=db.backref('artist', lazy=True))
 
-Show = db.Table('Show',
-    db.Column('artist_id', db.Integer, db.ForeignKey('Artist.id'), primary_key=True),
-    db.Column('venue_id', db.Integer, db.ForeignKey('Venue.id'), primary_key=True),
-    db.Column('start_time', db.DateTime(), nullable=True)
-)
+
+class Genre(db.Model):
+    __tablename__ = 'Genre'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50))
 
 #----------------------------------------------------------------------------#
 # Filters.
