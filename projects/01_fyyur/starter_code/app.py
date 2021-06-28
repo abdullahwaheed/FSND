@@ -30,24 +30,7 @@ migrate = Migrate(app, db)
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
-class Show(db.Model):
-    __tablename__ = 'show'
-
-    id = db.Column(db.Integer, primary_key=True)
-    artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'))
-    venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'))
-    start_time = db.Column(db.DateTime, nullable=True)
-
-
-# VenueGenre = db.Table('venue_genre',
-#     db.Column('genre_id', db.Integer, db.ForeignKey('genre.id'), primary_key=True),
-#     db.Column('venue_id', db.Integer, db.ForeignKey('venue.id'), primary_key=True),
-# )
-
-
-class Venue(db.Model):
-    __tablename__ = 'venue'
-
+class BasicInfo:
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     address = db.Column(db.String(120))
@@ -60,37 +43,51 @@ class Venue(db.Model):
     seeking_description = db.Column(db.String(500), nullable=True)
     image_link = db.Column(db.String(500))
 
-    # genres = db.relationship('Genre', secondary=VenueGenre, backref=db.backref('venues', lazy=True))
-    # shows = db.relationship('Show', secondary=Show, backref=db.backref('venues', lazy=True))
 
-
-# ArtistGenre = db.Table('artist_genre',
-#     db.Column('genre_id', db.Integer, db.ForeignKey('genre.id'), primary_key=True),
-#     db.Column('artist_id', db.Integer, db.ForeignKey('artist.id'), primary_key=True),
-# )
-
-
-class Artist(db.Model):
-    __tablename__ = 'artist'
+class Show(db.Model):
+    __tablename__ = 'show'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-
-    # shows = db.relationship('Show', secondary=Show, backref=db.backref('artists', lazy=True))
-#     genres = db.relationship('Genre', secondary=ArtistGenre, backref=db.backref('artist', lazy=True))
+    artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'))
+    venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'))
+    start_time = db.Column(db.DateTime, nullable=True)
 
 
-# class Genre(db.Model):
-#     __tablename__ = 'genre'
+VenueGenre = db.Table('venue_genre',
+    db.Column('genre_id', db.Integer, db.ForeignKey('genre.id'), primary_key=True),
+    db.Column('venue_id', db.Integer, db.ForeignKey('venue.id'), primary_key=True),
+)
 
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String(50))
+
+class Venue(BasicInfo, db.Model):
+    __tablename__ = 'venue'
+
+    genres = db.relationship('Genre', secondary=VenueGenre, backref=db.backref('venues', lazy=True))
+    shows = db.relationship('Show', backref=db.backref('venues', lazy=True))
+
+
+ArtistGenre = db.Table('artist_genre',
+    db.Column('genre_id', db.Integer, db.ForeignKey('genre.id'), primary_key=True),
+    db.Column('artist_id', db.Integer, db.ForeignKey('artist.id'), primary_key=True),
+)
+
+
+class Artist(BasicInfo, db.Model):
+    __tablename__ = 'artist'
+
+
+    shows = db.relationship('Show', backref=db.backref('artists', lazy=True))
+    genres = db.relationship('Genre', secondary=ArtistGenre, backref=db.backref('artist', lazy=True))
+
+
+class Genre(db.Model):
+    __tablename__ = 'genre'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50))
+
+    def __repr__(self):
+      return self.name
 
 #----------------------------------------------------------------------------#
 # Filters.
