@@ -290,7 +290,6 @@ def create_venue_submission():
     genres = request.form.getlist('genres')
     request_data = dict(request.form)
     del request_data['genres']
-    import pdb; pdb.set_trace()
 
     request_data['website'] = request_data.get('website_link', '')
     del request_data['website_link']
@@ -303,16 +302,12 @@ def create_venue_submission():
     db.session.add(venue)
     db.session.commit()
     flash('Venue ' + request.form['name'] + ' was successfully listed!')
-    # return_data['description'] = todo.description
   except:
     db.session.rollback()
     flash('An error occurred. Venue ' + request.form['name'] + ' could not be listed.', 'error')
     error = sys.exc_info()
-    import pdb; pdb.set_trace()
   finally:
     db.session.close()
-
-  # on successful db insert, flash success
   
   if error:
     return render_template('forms/new_venue.html', form=VenueForm(request.form))
@@ -326,7 +321,17 @@ def delete_venue(venue_id):
 
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
-  return None
+    try:
+        Venue.query.filter_by(id=venue_id).delete()
+        db.session.commit()
+        flash('Venue successfully deleted!')
+    except:
+        db.session.rollback()
+        flash('Cannot delete venue!', 'error')
+    finally:
+        db.session.close()
+    
+    return render_template('pages/home.html')
 
 #  Artists
 #  ----------------------------------------------------------------
