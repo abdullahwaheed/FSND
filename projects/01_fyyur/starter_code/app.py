@@ -76,8 +76,8 @@ class Artist(BasicInfo, db.Model):
     __tablename__ = 'artist'
 
     seeking_venue = db.Column(db.Boolean, default=False)
-    shows = db.relationship('Show', backref=db.backref('artists', lazy=True))
-    genres = db.relationship('Genre', secondary=ArtistGenre, backref=db.backref('artist', lazy=True))
+    shows = db.relationship('Show', backref=db.backref('artists', lazy='immediate'))
+    genres = db.relationship('Genre', secondary=ArtistGenre, backref=db.backref('artist', lazy='selectin'))
 
 
 class Genre(db.Model):
@@ -461,27 +461,47 @@ def show_artist(artist_id):
 #  ----------------------------------------------------------------
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
-  form = ArtistForm()
-  artist={
-    "id": 4,
-    "name": "Guns N Petals",
-    "genres": ["Rock n Roll"],
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "326-123-5000",
-    "website": "https://www.gunsnpetalsband.com",
-    "facebook_link": "https://www.facebook.com/GunsNPetals",
-    "seeking_venue": True,
-    "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
-    "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80"
-  }
-  # TODO: populate form with fields from artist with ID <artist_id>
+  # artist={
+  #   "id": 4,
+  #   "name": "Guns N Petals",
+  #   "genres": ["Rock n Roll"],
+  #   "city": "San Francisco",
+  #   "state": "CA",
+  #   "phone": "326-123-5000",
+  #   "website": "https://www.gunsnpetalsband.com",
+  #   "facebook_link": "https://www.facebook.com/GunsNPetals",
+  #   "seeking_venue": True,
+  #   "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
+  #   "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80"
+  # }
+  artist = Artist.query.get(artist_id)
+  genres = artist.genres
+  form = ArtistForm(data=dict(artist.__dict__))
   return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
   # TODO: take values from the form submitted, and update existing
   # artist record with ID <artist_id> using the new attributes
+  genres = request.form.getlist('genres')
+  request_data = dict(request.form)
+  del request_data['genres']
+
+  request_data['website'] = request_data.get('website_link', '')
+  del request_data['website_link']
+
+  request_data['seeking_venue'] = request_data.get('seeking_venue', 'y') == 'y'
+  
+  artist = Artist.query.get(artist_id)
+
+  for key, value in request_data.items():
+    if getattr(artist, key) != value:
+      setattr(artist, key, value)
+  
+  genres_list = list(Genre.query.filter(Genre.name.in_(genres)).all())
+  artist.genres = genres_list
+
+  db.session.commit()
 
   return redirect(url_for('show_artist', artist_id=artist_id))
 
