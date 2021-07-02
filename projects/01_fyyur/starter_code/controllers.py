@@ -53,12 +53,13 @@ def search_venues():
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
   data = Venue.query.get(venue_id)
-  past_shows = Show.query.filter(Show.start_time < datetime.now(), Show.venue_id == venue_id, Venue.id == Show.venue_id, Artist.id == Show.artist_id).with_entities(
+  show_query = Show.query.join(Venue).join(Artist).filter(Show.venue_id == venue_id)
+  past_shows = show_query.filter(Show.start_time < datetime.now()).with_entities(
     Show.artist_id, Artist.name.label('artist_name'), Artist.image_link.label('artist_image_link'), Show.start_time
   ).all()
   data.past_shows = past_shows
   data.past_shows_count = len(past_shows)
-  upcoming_shows = Show.query.filter(Show.start_time >= datetime.now(), Show.venue_id == venue_id, Venue.id == Show.venue_id, Artist.id == Show.artist_id).with_entities(
+  upcoming_shows = show_query.filter(Show.start_time >= datetime.now()).with_entities(
     Show.artist_id, Artist.name.label('artist_name'), Artist.image_link.label('artist_image_link'), Show.start_time
   ).all()
   data.upcoming_shows = upcoming_shows
@@ -140,13 +141,14 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   data = Artist.query.get(artist_id)
-  past_shows = Show.query.filter(Show.start_time < datetime.now(), Show.artist_id == artist_id, Venue.id == Show.venue_id, Artist.id == Show.artist_id).with_entities(
+  show_query = Show.query.join(Venue).join(Artist).filter(Show.artist_id == artist_id)
+  past_shows = show_query.filter(Show.start_time < datetime.now()).with_entities(
     Venue.id.label('venue_id'), Venue.name.label('venue_name'),
     Venue.image_link.label('venue_image_link'), Show.start_time
   ).all()
   data.past_shows = past_shows
   data.past_shows_count = len(past_shows)
-  upcoming_shows = Show.query.filter(Show.start_time >= datetime.now(), Show.artist_id == artist_id, Venue.id == Show.venue_id, Artist.id == Show.artist_id).with_entities(
+  upcoming_shows = show_query.filter(Show.start_time >= datetime.now()).with_entities(
     Venue.id.label('venue_id'), Venue.name.label('venue_name'),
     Venue.image_link.label('venue_image_link'), Show.start_time
   ).all()
@@ -263,7 +265,7 @@ def create_artist_submission():
 
 @app.route('/shows')
 def shows():
-  data = Show.query.filter(Venue.id == Show.venue_id, Artist.id == Show.artist_id).with_entities(
+  data = show_query = Show.query.join(Venue).join(Artist).with_entities(
     Venue.id.label('venue_id'), Venue.name.label('venue_name'), Show.artist_id, Artist.name.label('artist_name'),
     Artist.image_link.label('artist_image_link'), Show.start_time
   ).all()
