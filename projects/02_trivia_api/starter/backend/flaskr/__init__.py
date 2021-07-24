@@ -37,13 +37,9 @@ def create_app(test_config=None):
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
 
-  '''
-  @TODO: 
-  Create an endpoint to handle GET requests 
-  for all available categories.
-  '''
-  @app.route('/categoreis')
+  @app.route('/categories')
   def retrieve_categories():
+    """Create an endpoint to handle GET requests for all available categories."""
     return jsonify({
       'success': True,
       'categories': get_categories_dict(),
@@ -51,11 +47,6 @@ def create_app(test_config=None):
 
   '''
   @TODO: 
-  Create an endpoint to handle GET requests for questions, 
-  including pagination (every 10 questions). 
-  This endpoint should return a list of questions, 
-  number of total questions, current category, categories. 
-
   TEST: At this point, when you start the application
   you should see questions and categories generated,
   ten questions per page and pagination at the bottom of the screen for three pages.
@@ -63,6 +54,10 @@ def create_app(test_config=None):
   '''
   @app.route('/questions')
   def retrieve_questions():
+    """
+      Create an endpoint to handle GET requests for questions, including pagination (every 10 questions). This endpoint should return a list of questions, 
+      number of total questions, current category, categories.
+    """
     questions = Question.query.order_by(Question.id).all()
     current_question = paginate_data(request, questions)
 
@@ -86,14 +81,25 @@ def create_app(test_config=None):
 
   '''
   @TODO: 
-  Create an endpoint to POST a new question, 
-  which will require the question and answer text, 
-  category, and difficulty score.
-
   TEST: When you submit a question on the "Add" tab, 
   the form will clear and the question will appear at the end of the last page
   of the questions list in the "List" tab.  
   '''
+  @app.route('/questions', methods=['POST'])
+  def create_question():
+    """
+      Create an endpoint to POST a new question, which will require the question and answer text, category, and difficulty score.
+    """
+    try:
+      request_data = request.get_json()
+      question = Question(**request_data)
+      question.insert()
+      return jsonify({
+        'success': True,
+        'created': question.id,
+      })
+    except:
+      abort(422)
 
   '''
   @TODO: 
