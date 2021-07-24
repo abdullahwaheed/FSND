@@ -2,6 +2,7 @@ import random
 import unittest
 import json
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.wrappers import request
 
 from flaskr import create_app
 from models import setup_db, Question, Category
@@ -39,6 +40,37 @@ class TriviaTestCase(unittest.TestCase):
         if question:
             question.delete()
     
+    # # Quiz questions Test
+    def test_quiz_questions_with_category(self):
+        categories = Category.query.all()
+        rand = random.randrange(0, len(categories)) 
+        category = categories[rand]
+        request_data = {'previos_questions': [], 'quiz_category': {'id': category.id, 'type': category.type}}
+        res = self.client().post(f'/quizzes', json=request_data)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(data['question'].get('category'), category.id)
+
+    def test_quiz_questions_without_category(self):
+        request_data = {'previos_questions': [], 'quiz_category': {'id': 0, 'type': 'click'}}
+        res = self.client().post(f'/quizzes', json=request_data)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertTrue(data['question'])
+    
+    def test_question_with_wrong_data(self):
+        request_data = {'previos_questions': [], 'quiz_category': {'id': 'abc', 'type': 'click'}}
+        res = self.client().post(f'/quizzes', json=request_data)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'unprocessable')
+
     # Questions for category Test
     def test_questions_for_category(self):
         categories = Category.query.all()
@@ -55,7 +87,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['current_category'], category.type)
         self.assertTrue(data['total_questions'])
     
-    def test_404_sent_requesting_beyond_valid_page(self):
+    def test_404_sent_requesting_beyond_valid_page_for_categories(self):
         res = self.client().get('/categories/1000/questions')
         data = json.loads(res.data)
 
