@@ -1,8 +1,9 @@
-import os
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
+
+from werkzeug.wrappers import response
 
 from models import setup_db, Question, Category
 
@@ -17,13 +18,29 @@ def paginate_data(request, given_data):
   formatted_data = [item.format() for item in given_data]
   return formatted_data[start:end]
 
-def get_categories_dict():
+def get_paginted_all_questions(request):
+  questions = Question.query.order_by(Question.id).all()
+  current_question = paginate_data(request, questions)
+
+  if len(current_question) == 0:
+    abort(404)
+  
+  return {
+    'success': True,
+    'questions': current_question,
+    'total_questions': len(Question.query.all()),
+  }
+
+def get_categories_data():
   categories = Category.query.order_by(Category.id).all()
   current_categories = {}
   for category in categories:
     current_categories[category.id] = category.type
 
-  return current_categories
+  return {
+      'success': True,
+      'categories': current_categories
+  }
 
 def create_app(test_config=None):
   # create and configure the app
@@ -40,10 +57,7 @@ def create_app(test_config=None):
   @app.route('/categories')
   def retrieve_categories():
     """Create an endpoint to handle GET requests for all available categories."""
-    return jsonify({
-      'success': True,
-      'categories': get_categories_dict(),
-    })
+    return jsonify(get_categories_data())
 
   '''
   @TODO: 
@@ -58,26 +72,35 @@ def create_app(test_config=None):
       Create an endpoint to handle GET requests for questions, including pagination (every 10 questions). This endpoint should return a list of questions, 
       number of total questions, current category, categories.
     """
-    questions = Question.query.order_by(Question.id).all()
-    current_question = paginate_data(request, questions)
-
-    if len(current_question) == 0:
-      abort(404)
-    
-    return jsonify({
-      'success': True,
-      'questions': current_question,
-      'total_questions': len(Question.query.all()),
-      'categories': get_categories_dict(),
-    })
+    questions = get_paginted_all_questions(request)
+    questions.update(get_categories_data())
+    return jsonify(questions)
 
   '''
   @TODO: 
-  Create an endpoint to DELETE question using a question ID. 
 
   TEST: When you click the trash icon next to a question, the question will be removed.
   This removal will persist in the database and when you refresh the page. 
   '''
+  @app.route('/questions/<int:question_id>', methods=['DELETE'])
+  def delete_question(question_id):
+    """
+      Create an endpoint to DELETE question using a question ID. 
+    """
+    try:
+      question = Question.query.filter(Question.id == question_id).one_or_none()
+
+      if question is None:
+        abort(404)
+
+      question.delete()
+      response_data = get_paginted_all_questions(request)
+      response_data.update({'success': True, 'deleted': question_id})
+
+      return jsonify(response_data)
+
+    except:
+      abort(422)
 
   '''
   @TODO: 
@@ -94,10 +117,11 @@ def create_app(test_config=None):
       request_data = request.get_json()
       question = Question(**request_data)
       question.insert()
-      return jsonify({
-        'success': True,
-        'created': question.id,
-      })
+
+      response_data = get_paginted_all_questions(request)
+      response_data.update({'success': True, 'created': question.id})
+
+      return jsonify(response_data)
     except:
       abort(422)
 
