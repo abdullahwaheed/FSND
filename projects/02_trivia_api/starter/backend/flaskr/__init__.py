@@ -17,6 +17,14 @@ def paginate_data(request, given_data):
   formatted_data = [item.format() for item in given_data]
   return formatted_data[start:end]
 
+def get_categories_dict():
+  categories = Category.query.order_by(Category.id).all()
+  current_categories = {}
+  for category in categories:
+    current_categories[category.id] = category.type
+
+  return current_categories
+
 def create_app(test_config=None):
   # create and configure the app
   app = Flask(__name__)
@@ -34,24 +42,11 @@ def create_app(test_config=None):
   Create an endpoint to handle GET requests 
   for all available categories.
   '''
-  @app.route('/questions')
-  def retrieve_questions():
-    questions = Question.query.order_by(Question.id).all()
-    current_question = paginate_data(request, questions)
-
-    if len(current_question) == 0:
-      abort(404)
-
-    categories = Category.query.order_by(Category.id).all()
-    current_categories = {}
-    for category in categories:
-      current_categories[category.id] = category.type
-    
+  @app.route('/categoreis')
+  def retrieve_categories():
     return jsonify({
       'success': True,
-      'questions': current_question,
-      'total_questions': len(Question.query.all()),
-      'categories': current_categories,
+      'categories': get_categories_dict(),
     })
 
   '''
@@ -66,6 +61,20 @@ def create_app(test_config=None):
   ten questions per page and pagination at the bottom of the screen for three pages.
   Clicking on the page numbers should update the questions. 
   '''
+  @app.route('/questions')
+  def retrieve_questions():
+    questions = Question.query.order_by(Question.id).all()
+    current_question = paginate_data(request, questions)
+
+    if len(current_question) == 0:
+      abort(404)
+    
+    return jsonify({
+      'success': True,
+      'questions': current_question,
+      'total_questions': len(Question.query.all()),
+      'categories': get_categories_dict(),
+    })
 
   '''
   @TODO: 
