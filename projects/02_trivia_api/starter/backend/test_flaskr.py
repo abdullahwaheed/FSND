@@ -1,4 +1,4 @@
-import os
+import random
 import unittest
 import json
 from flask_sqlalchemy import SQLAlchemy
@@ -39,6 +39,30 @@ class TriviaTestCase(unittest.TestCase):
         if question:
             question.delete()
     
+    # Questions for category Test
+    def test_questions_for_category(self):
+        categories = Category.query.all()
+        rand = random.randrange(0, len(categories)) 
+        category = categories[rand]
+        res = self.client().get(f'/categories/{category.id}/questions')
+        data = json.loads(res.data)
+
+        questions_count = Question.query.filter(Question.category == category.id).count()
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(len(data['questions']), questions_count)
+        self.assertEqual(data['current_category'], category.type)
+        self.assertTrue(data['total_questions'])
+    
+    def test_404_sent_requesting_beyond_valid_page(self):
+        res = self.client().get('/categories/1000/questions')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'resource not found')
+
     # Question List Test
     def test_get_paginated_questions(self):
         res = self.client().get('/questions')
@@ -131,8 +155,6 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertEqual(data['total_questions'], 0)
         self.assertEqual(len(data['questions']), 0)
-
-    
 
     """
     TODO
