@@ -209,8 +209,7 @@ def create_app(test_config=None):
         'question': question
       })
 
-    except Exception as exc:
-      print(exc)
+    except:
       abort(422)
 
 
