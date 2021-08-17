@@ -30,8 +30,7 @@ CORS(app)
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks')
-@requires_auth('get:drinks-detail')
-def images(payload):
+def drinks():
     drinks_data = Drink.query.all()
     drinks = [drink.short() for drink in drinks_data]
     return jsonify({"success": True, "drinks": drinks})
@@ -44,6 +43,12 @@ def images(payload):
     returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
+@app.route('/drinks-detail')
+@requires_auth('get:drinks-detail')
+def drinks_detail(payload):
+    drinks_data = Drink.query.all()
+    drinks = [drink.long() for drink in drinks_data]
+    return jsonify({"success": True, "drinks": drinks})
 
 
 '''
@@ -80,7 +85,20 @@ def images(payload):
     returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
+@app.route('/drinks/<int:drink_id>', methods=['DELETE'])
+@requires_auth('delete:drinks')
+def delete_drink(payload, drink_id) :
+    try:
+        drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
 
+        if drink is None:
+            abort(404)
+
+        drink.delete()
+        return jsonify({"success": True, "delete": drink_id})
+    except Exception as exc:
+        print(exc)
+        abort(422)
 
 # Error Handling
 
@@ -101,12 +119,13 @@ def server_error(error):
     """
     handler for AuthError
     """
+    error_payload = error.error
     return jsonify({
         "success": False,
-        "error": 401,
+        "error": error_payload.get('code'),
         "message": "authentication error",
-        "payload": str(error)
-    }), 401
+        "payload": error_payload.get('description')
+    }), error.status_code
 
 
 # other errors
