@@ -1,3 +1,4 @@
+from operator import ge
 import os
 import pdb
 from flask import Flask, request, jsonify, abort
@@ -68,7 +69,8 @@ def create_drink(payload):
     """
     try:
         request_data = request.get_json()
-        drink = Drink(**request_data)
+        recipe = request_data.get('recipe')
+        drink = Drink(title=request_data.get('title'), recipe=json.dumps(recipe))
         drink.insert()
 
         return jsonify({"success": True, "drinks": [drink.long()]})
@@ -93,8 +95,10 @@ def update_drink(payload, drink_id):
             abort(404)
 
         request_data = request.get_json()
-        for key, value in request_data:
-            setattr(drink, key, value)
+        if request_data.get('title'):
+            drink.title = request_data.get('title')
+        if request_data.get('recipe'):
+            drink.recipe = request_data.get('recipe')
         
         drink.update()
 
