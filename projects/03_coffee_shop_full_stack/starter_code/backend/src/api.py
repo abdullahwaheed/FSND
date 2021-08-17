@@ -1,4 +1,5 @@
 import os
+import pdb
 from flask import Flask, request, jsonify, abort
 from sqlalchemy import exc
 import json
@@ -28,7 +29,12 @@ CORS(app)
     returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
-
+@app.route('/drinks')
+@requires_auth('get:drinks-detail')
+def images(payload):
+    drinks_data = Drink.query.all()
+    drinks = [drink.short() for drink in drinks_data]
+    return jsonify({"success": True, "drinks": drinks})
 
 '''
 @TODO implement endpoint

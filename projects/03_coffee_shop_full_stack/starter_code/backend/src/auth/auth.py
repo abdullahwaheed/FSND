@@ -1,4 +1,5 @@
 import json
+import pdb
 from flask import request, _request_ctx_stack, abort
 from functools import wraps
 from jose import jwt
@@ -7,7 +8,7 @@ from urllib.request import urlopen
 
 AUTH0_DOMAIN = 'abdullah-udacity-fsnd.us.auth0.com'
 ALGORITHMS = ['RS256']
-API_AUDIENCE = 'coffee-udacity'
+API_AUDIENCE = 'coffee'
 
 ## AuthError Exception
 '''
@@ -21,10 +22,6 @@ class AuthError(Exception):
 
 
 ## Auth Header
-
-'''
-@TODO implement get_token_auth_header() method
-'''
 def get_token_auth_header():
     """
     it attempt to get the header from the request
@@ -81,12 +78,6 @@ def check_permissions(permission, payload):
         }, 403)
     return True
 
-'''
-@TODO implement verify_decode_jwt(token) method
-    @INPUTS
-        token: a json web token (string)
-    !!NOTE urlopen has a common certificate error described here: https://stackoverflow.com/questions/50236117/scraping-ssl-certificate-verify-failed-error-for-http-en-wikipedia-org
-'''
 def verify_decode_jwt(token):
     """
     be an Auth0 token with key id (kid)
