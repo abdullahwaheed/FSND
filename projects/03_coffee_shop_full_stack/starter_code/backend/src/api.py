@@ -77,10 +77,41 @@ CORS(app)
 
 
 # Error Handling
-'''
-Example error handling for unprocessable entity
-'''
 
+@app.errorhandler(404)
+def not_found(error):
+    """
+    error handler for 404
+    """
+    return jsonify({
+        "success": False,
+        "error": 404,
+        "message": "resource not found"
+    }), 404
+
+
+@app.errorhandler(AuthError)
+def server_error(error):
+    """
+    handler for AuthError
+    """
+    return jsonify({
+        "success": False,
+        "error": 401,
+        "message": "authentication error",
+        "payload": str(error)
+    }), 401
+
+
+# other errors
+@app.errorhandler(401)
+def not_found(error):
+    return jsonify({
+        "success": False,
+        "error": 401,
+        "message": "unathorized",
+        "payload": str(error)
+    }), 401
 
 @app.errorhandler(422)
 def unprocessable(error):
@@ -90,25 +121,27 @@ def unprocessable(error):
         "message": "unprocessable"
     }), 422
 
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({
+        "success": False,
+        "error": 400,
+        "message": "bad request"
+    }), 400
 
-'''
-@TODO implement error handlers using the @app.errorhandler(error) decorator
-    each error handler should return (with approprate messages):
-             jsonify({
-                    "success": False,
-                    "error": 404,
-                    "message": "resource not found"
-                    }), 404
+@app.errorhandler(405)
+def not_found(error):
+    return jsonify({
+        "success": False,
+        "error": 405,
+        "message": "method not allowed"
+    }), 405
 
-'''
-
-'''
-@TODO implement error handler for 404
-    error handler should conform to general task above
-'''
-
-
-'''
-@TODO implement error handler for AuthError
-    error handler should conform to general task above
-'''
+@app.errorhandler(Exception)
+def server_error(error):
+    return jsonify({
+        "success": False,
+        "error": 500,
+        "message": "something went wrong",
+        "payload": str(error)
+    }), 500

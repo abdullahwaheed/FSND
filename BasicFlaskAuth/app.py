@@ -1,4 +1,4 @@
-from flask import Flask, request, abort
+from flask import Flask, request, abort, jsonify
 import json
 from functools import wraps
 from jose import jwt
@@ -7,9 +7,9 @@ from urllib.request import urlopen
 
 app = Flask(__name__)
 
-AUTH0_DOMAIN = @TODO_REPLACE_WITH_YOUR_DOMAIN
+AUTH0_DOMAIN = 'abdullah-udacity-fsnd.us.auth0.com'
 ALGORITHMS = ['RS256']
-API_AUDIENCE = @TODO_REPLACE_WITH_YOUR_API_AUDIENCE
+API_AUDIENCE = 'image'
 
 
 class AuthError(Exception):
@@ -94,31 +94,109 @@ def verify_decode_jwt(token):
                 'code': 'invalid_claims',
                 'description': 'Incorrect claims. Please, check the audience and issuer.'
             }, 401)
-        except Exception:
+        except Exception as exc:
             raise AuthError({
                 'code': 'invalid_header',
                 'description': 'Unable to parse authentication token.'
             }, 400)
     raise AuthError({
-                'code': 'invalid_header',
+        'code': 'invalid_header',
                 'description': 'Unable to find the appropriate key.'
-            }, 400)
+        }, 400)
 
 
-def requires_auth(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        token = get_token_auth_header()
-        try:
-            payload = verify_decode_jwt(token)
-        except:
-            abort(401)
-        return f(payload, *args, **kwargs)
+def check_permissions(permission, payload):
+    if 'permissions' not in payload:
+                        raise AuthError({
+                            'code': 'invalid_claims',
+                            'description': 'Permissions not included in JWT.'
+                        }, 400)
 
-    return wrapper
+    if permission not in payload['permissions']:
+        raise AuthError({
+            'code': 'unauthorized',
+            'description': 'Permission not found.'
+        }, 403)
+    return True
 
-@app.route('/headers')
-@requires_auth
-def headers(payload):
-    print(payload)
-    return 'Access Granted'
+def requires_auth(permissions=''):
+    def requires_auth_decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                token = get_token_auth_header()
+                payload = verify_decode_jwt(token)
+            except:
+                abort(401)
+
+            check_permissions(permissions, payload)
+            return f(payload, *args, **kwargs)
+
+        return wrapper
+    return requires_auth_decorator
+
+
+# @app.route('/headers')
+# @requires_auth
+# def headers(payload):
+#     print(payload)
+#     return 'Access Granted'
+
+
+@app.route('/images')
+@requires_auth('get:images')
+def images(payload):
+    # print(payload)
+    return 'Hoorrrraaayyyy!!!!'
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        "success": False,
+        "error": 404,
+        "message": "resource not found"
+    }), 404
+
+@app.errorhandler(401)
+def not_found(error):
+    return jsonify({
+        "success": False,
+        "error": 401,
+        "message": "unathorized",
+        "payload": str(error)
+    }), 401
+
+
+@app.errorhandler(422)
+def unprocessable(error):
+    return jsonify({
+        "success": False,
+        "error": 422,
+        "message": "unprocessable"
+    }), 422
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({
+        "success": False,
+        "error": 400,
+        "message": "bad request"
+    }), 400
+
+@app.errorhandler(405)
+def not_found(error):
+    return jsonify({
+        "success": False,
+        "error": 405,
+        "message": "method not allowed"
+    }), 405
+
+@app.errorhandler(Exception)
+def server_error(error):
+    return jsonify({
+        "success": False,
+        "error": 500,
+        "message": "something went wrong",
+        "payload": str(error)
+    }), 500
