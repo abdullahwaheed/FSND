@@ -15,6 +15,7 @@ CORS(app)
 
 db_drop_and_create_all()
 
+
 # ROUTES
 @app.route('/drinks')
 def drinks():
